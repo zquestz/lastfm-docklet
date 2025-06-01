@@ -1,0 +1,82 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the docklet-lastfm package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: docklet-lastfm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-31 15:07-1000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: LastfmDockItem.vala:134
+msgid "Last.fm Preferences"
+msgstr ""
+
+#: LastfmDockItem.vala:137
+msgid "_Cancel"
+msgstr ""
+
+#: LastfmDockItem.vala:138
+msgid "_OK"
+msgstr ""
+
+#: LastfmDockItem.vala:155
+msgid "API Key:"
+msgstr ""
+
+#: LastfmDockItem.vala:160
+msgid "Enter your Last.fm API key"
+msgstr ""
+
+#: LastfmDockItem.vala:162
+msgid "Username:"
+msgstr ""
+
+#: LastfmDockItem.vala:167
+msgid "Enter your Last.fm username"
+msgstr ""
+
+#: LastfmDockItem.vala:169
+msgid "Max Tracks:"
+msgstr ""
+
+#: LastfmDockItem.vala:175
+msgid "Get your API key from: https://www.last.fm/api/account/create"
+msgstr ""
+
+#: LastfmDockItem.vala:214
+msgid "Preferences"
+msgstr ""
+
+#: LastfmDockItem.vala:223
+msgid "About"
+msgstr ""
+
+#: LastfmDockItem.vala:237
+msgid "Last.fm Docklet"
+msgstr ""
+
+#: LastfmDockItem.vala:239
+msgid "Lists recent tracks scrobbled to Last.fm"
+msgstr ""
+
+#: LastfmDockItem.vala:241
+msgid "GitHub Repository"
+msgstr ""
+
+#: LastfmDocklet.vala:23
+msgid "Last.fm"
+msgstr ""
+
+#: LastfmDocklet.vala:27
+msgid "A small Last.fm docklet"
+msgstr ""

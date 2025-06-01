@@ -1,0 +1,12 @@
+### Vim ###
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+Session.vim
+.netrwhist
+*~
+tags
+
+# Build artifacts
+libdocklet-lastfm.so.vapi
+libdocklet-lastfm.so
+build
