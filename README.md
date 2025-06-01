@@ -2,6 +2,8 @@
 
 A Last.fm docklet for [Plank Reloaded](https://github.com/zquestz/plank-reloaded).
 
+![lastfm-docklet-screenshot](screenshots/screenshot.webp)
+
 ## Features
 
 - Lists recent tracks scrobbled to Last.fm
