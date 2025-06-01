@@ -1,5 +1,5 @@
 /**
- * Lastfm Docklet
+ * Last.fm Docklet
  *
  * @author quest <quest@mac.com>
  */

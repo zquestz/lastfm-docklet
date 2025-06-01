@@ -9,7 +9,7 @@ namespace Lastfm {
     public string Username { get; set; default = ""; }
 
     [Description(nick = "max-entries", blurb = "Max number of scrobbles to show")]
-    public int MaxEntries { get; set; default = 25; }
+    public int MaxEntries { get; set; default = 10; }
 
     public LastfmPreferences.with_file(GLib.File file) {
       base.with_file(file);
@@ -18,7 +18,7 @@ namespace Lastfm {
     protected override void reset_properties() {
       APIKey = "";
       Username = "";
-      MaxEntries = 25;
+      MaxEntries = 10;
     }
   }
 }

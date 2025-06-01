@@ -10,6 +10,8 @@ A Last.fm docklet for [Plank Reloaded](https://github.com/zquestz/plank-reloaded
 
 - vala
 - gtk+-3.0
+- libsoup-3.0'
+- json-glib-1.0'
 - plank-reloaded
 
 ## Installation
@@ -34,7 +36,7 @@ After installation, open the Plank Reloaded settings, navigate to "Docklets", an
 ## Usage
 
 - **Left click**: View list of recently scrobbled tracks.
-- **Right click**: Adjust docklet settings.
+- **Right click**: Adjust docklet preferences.
 
 ## License
 
