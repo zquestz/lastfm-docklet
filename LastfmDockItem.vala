@@ -40,6 +40,8 @@ namespace Lastfm {
       lastfm_client = new LastfmClient();
       recent_tracks = new Gee.ArrayList<Track> ();
 
+      lastfm_client.update_cache_size(prefs.MaxEntries);
+
       setup_preference_monitoring();
 
       GLib.Timeout.add(500, () => {
@@ -66,16 +68,17 @@ namespace Lastfm {
      * Sets up monitoring for preference changes
      */
     private void setup_preference_monitoring() {
-      prefs.notify["APIKey"].connect(() => {
-        schedule_debounced_fetch();
-      });
-
-      prefs.notify["Username"].connect(() => {
-        schedule_debounced_fetch();
-      });
-
-      prefs.notify["MaxEntries"].connect(() => {
-        schedule_debounced_fetch();
+      prefs.notify.connect((pspec) => {
+        switch (pspec.name) {
+          case "APIKey":
+          case "Username":
+            schedule_debounced_fetch();
+            break;
+          case "MaxEntries":
+            lastfm_client.update_cache_size(prefs.MaxEntries);
+            schedule_debounced_fetch();
+            break;
+        }
       });
     }
 
@@ -632,7 +635,7 @@ namespace Lastfm {
     private void show_about_dialog() {
       var about_dialog = new Gtk.AboutDialog();
       about_dialog.set_program_name(_("Last.fm Docklet"));
-      about_dialog.set_version("0.0.1");
+      about_dialog.set_version("0.1.0");
       about_dialog.set_comments(_("Lists recent tracks scrobbled to Last.fm"));
       about_dialog.set_website("https://github.com/zquestz/lastfm-docklet");
       about_dialog.set_website_label(_("GitHub Repository"));

@@ -36,11 +36,31 @@ namespace Lastfm {
    */
   public class LastfmClient : GLib.Object {
     private const string API_BASE = "http://ws.audioscrobbler.com/2.0/";
+    private const int CACHE_SIZE_MULTIPLIER = 3;
 
     private Soup.Session session;
 
+    private int max_cache_size = 30;
+    private Gee.HashMap<string, Gdk.Pixbuf> image_cache;
+    private GLib.Mutex cache_mutex;
+
     public LastfmClient() {
       session = new Soup.Session();
+      image_cache = new Gee.HashMap<string, Gdk.Pixbuf> ();
+    }
+
+    /**
+     * Updates cache size based on user preferences
+     */
+    public void update_cache_size(int max_entries) {
+      cache_mutex.lock();
+      max_cache_size = max_entries * CACHE_SIZE_MULTIPLIER;
+
+      if (image_cache.size > max_cache_size) {
+        image_cache.clear();
+      }
+
+      cache_mutex.unlock();
     }
 
     /**
@@ -235,44 +255,67 @@ namespace Lastfm {
     }
 
     /**
-     * Downloads album art for a track
+     * Downloads album art for a track with simple caching
      */
     public async Gdk.Pixbuf? get_album_art(Track track, int size) throws Error {
-        var image_url = get_best_image_url(track);
+      var image_url = get_best_image_url(track);
 
-        if (image_url.length == 0) {
-            return null;
-        }
+      if (image_url.length == 0) {
+        return null;
+      }
 
-        var msg = new Soup.Message("GET", image_url);
-        var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+      var cache_key = @"$image_url:$size";
 
-        if (msg.status_code != 200) {
-            throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
-        }
+      cache_mutex.lock();
 
-        var data = response.get_data();
-        var stream = new MemoryInputStream.from_data(data);
-        var pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
+      Gdk.Pixbuf? result = null;
+      if (image_cache.has_key(cache_key)) {
+        result = image_cache[cache_key];
+      }
 
-        return pixbuf;
+      cache_mutex.unlock();
+
+      if (result != null) {
+        return result;
+      }
+
+      var msg = new Soup.Message("GET", image_url);
+      var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+
+      if (msg.status_code != 200) {
+        throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
+      }
+
+      var data = response.get_data();
+      var stream = new MemoryInputStream.from_data(data);
+      var pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
+
+      cache_mutex.lock();
+
+      if (image_cache.size >= max_cache_size) {
+        image_cache.clear();
+      }
+
+      image_cache[cache_key] = pixbuf;
+      cache_mutex.unlock();
+
+      return pixbuf;
     }
 
     /**
      * Gets the best available image URL for a track
      */
     private string get_best_image_url(Track track) {
-        if (track.image_extralarge.length > 0) {
-            return track.image_extralarge;
-        } else if (track.image_large.length > 0) {
-            return track.image_large;
-        } else if (track.image_medium.length > 0) {
-            return track.image_medium;
-        } else if (track.image_small.length > 0) {
-            return track.image_small;
-        }
-        return "";
+      if (track.image_extralarge.length > 0) {
+        return track.image_extralarge;
+      } else if (track.image_large.length > 0) {
+        return track.image_large;
+      } else if (track.image_medium.length > 0) {
+        return track.image_medium;
+      } else if (track.image_small.length > 0) {
+        return track.image_small;
+      }
+      return "";
     }
-
   }
 }
