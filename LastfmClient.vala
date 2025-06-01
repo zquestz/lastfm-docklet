@@ -221,7 +221,7 @@ namespace Lastfm {
       if (track_obj.has_member("date")) {
         var date_obj = track_obj.get_object_member("date");
         if (date_obj.has_member("uts")) {
-          track.timestamp = date_obj.get_int_member("uts");
+          track.timestamp = int.parse(date_obj.get_string_member("uts"));
         }
         track.date_text = get_json_string_member(date_obj, "#text");
       }
