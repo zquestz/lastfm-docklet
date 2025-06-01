@@ -29,6 +29,14 @@ meson compile -C build
 sudo meson install -C build
 ```
 
+### Method 2: Arch Linux (AUR)
+
+If you're using Arch Linux or an Arch-based distribution, you can install lastfm-docklet via the AUR:
+
+```bash
+yay -S plank-reloaded-docklet-lastfm-git
+```
+
 ## Setup
 
 After installation, open the Plank Reloaded settings, navigate to "Docklets", and drag and drop Last.fm onto your dock.
