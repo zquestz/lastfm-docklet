@@ -11,6 +11,9 @@ namespace Lastfm {
     [Description(nick = "max-entries", blurb = "Max number of scrobbles to show")]
     public int MaxEntries { get; set; default = 10; }
 
+    [Description(nick = "rounded-corners", blurb = "Round the corners of the dock icon")]
+    public bool RoundedCorners { get; set; default = false; }
+
     public LastfmPreferences.with_file(GLib.File file) {
       base.with_file(file);
     }
@@ -19,6 +22,7 @@ namespace Lastfm {
       APIKey = "";
       Username = "";
       MaxEntries = 10;
+      RoundedCorners = false;
     }
   }
 }

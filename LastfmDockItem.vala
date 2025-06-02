@@ -78,6 +78,9 @@ namespace Lastfm {
             lastfm_client.update_cache_size(prefs.MaxEntries);
             schedule_debounced_fetch();
             break;
+          case "RoundedCorners":
+            schedule_debounced_fetch();
+            break;
         }
       });
     }
@@ -161,7 +164,7 @@ namespace Lastfm {
         var pixbuf = yield lastfm_client.get_album_art(most_recent_track, ALBUM_ICON_SIZE);
 
         if (pixbuf != null) {
-          ForcePixbuf = pixbuf;
+          ForcePixbuf = prefs.RoundedCorners ? round_pixbuf_corners(pixbuf) : pixbuf;
         } else {
           reset_to_default_icon();
         }
@@ -176,6 +179,39 @@ namespace Lastfm {
      */
     private void reset_to_default_icon() {
       ForcePixbuf = icon_pixbuf;
+    }
+
+    /**
+     * Creates a pixbuf with rounded corners
+     */
+    private Gdk.Pixbuf round_pixbuf_corners(Gdk.Pixbuf source) {
+      if (source == null) {
+        return source;
+      }
+
+      int width = source.get_width();
+      int height = source.get_height();
+
+      var surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, width, height);
+      var cr = new Cairo.Context(surface);
+
+      double radius = double.min(width, height) * 0.15;
+
+      cr.new_sub_path();
+      cr.arc(radius, radius, radius, Math.PI, 3 * Math.PI / 2);
+      cr.arc(width - radius, radius, radius, 3 * Math.PI / 2, 0);
+      cr.arc(width - radius, height - radius, radius, 0, Math.PI / 2);
+      cr.arc(radius, height - radius, radius, Math.PI / 2, Math.PI);
+      cr.close_path();
+
+      cr.clip();
+
+      Gdk.cairo_set_source_pixbuf(cr, source, 0, 0);
+      cr.paint();
+
+      var rounded_pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height);
+
+      return rounded_pixbuf;
     }
 
     /**
@@ -577,6 +613,12 @@ namespace Lastfm {
       max_entries_spin.set_value(prefs.MaxEntries);
       max_entries_spin.set_hexpand(true);
 
+      var rounded_corners_label = new Gtk.Label(_("Rounded Corners:"));
+      rounded_corners_label.set_halign(Gtk.Align.START);
+      var rounded_corners_switch = new Gtk.Switch();
+      rounded_corners_switch.set_active(prefs.RoundedCorners);
+      rounded_corners_switch.set_halign(Gtk.Align.START);
+
       var help_label = new Gtk.Label(_("Get your API key from: https://www.last.fm/api/account/create"));
       help_label.set_halign(Gtk.Align.START);
       help_label.set_markup("<small><i>" + help_label.get_text() + "</i></small>");
@@ -588,7 +630,9 @@ namespace Lastfm {
       grid.attach(username_entry, 1, 1, 1, 1);
       grid.attach(max_entries_label, 0, 2, 1, 1);
       grid.attach(max_entries_spin, 1, 2, 1, 1);
-      grid.attach(help_label, 0, 3, 2, 1);
+      grid.attach(rounded_corners_label, 0, 3, 1, 1);
+      grid.attach(rounded_corners_switch, 1, 3, 1, 1);
+      grid.attach(help_label, 0, 4, 2, 1);
 
       content_area.pack_start(grid, true, true, 0);
 
@@ -599,10 +643,12 @@ namespace Lastfm {
           prefs.APIKey = api_key_entry.get_text().strip();
           prefs.Username = username_entry.get_text().strip();
           prefs.MaxEntries = (int) max_entries_spin.get_value();
+          prefs.RoundedCorners = rounded_corners_switch.get_active();
 
           prefs.notify_property("APIKey");
           prefs.notify_property("Username");
           prefs.notify_property("MaxEntries");
+          prefs.notify_property("RoundedCorners");
         }
         dialog.destroy();
       });
