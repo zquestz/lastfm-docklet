@@ -2,5 +2,6 @@
 <gresources>
 	<gresource prefix="/at/greyh/lastfm">
 		<file>icons/lastfm.png</file>
+		<file>icons/missing.png</file>
 	</gresource>
 </gresources>

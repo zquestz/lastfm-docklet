@@ -37,6 +37,7 @@ namespace Lastfm {
   public class LastfmClient : GLib.Object {
     private const string API_BASE = "http://ws.audioscrobbler.com/2.0/";
     private const int CACHE_SIZE_MULTIPLIER = 3;
+    private const string NOT_FOUND_IMAGE = "2a96cbd8b46e442fc41c2b86b821562f.png";
 
     private Soup.Session session;
 
@@ -279,16 +280,22 @@ namespace Lastfm {
         return result;
       }
 
-      var msg = new Soup.Message("GET", image_url);
-      var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+      Gdk.Pixbuf pixbuf;
 
-      if (msg.status_code != 200) {
-        throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
+      if (image_url.contains(NOT_FOUND_IMAGE)) {
+        pixbuf = new Gdk.Pixbuf.from_resource_at_scale(Lastfm.G_RESOURCE_PATH + "/icons/missing.png", size, size, true);
+      } else {
+        var msg = new Soup.Message("GET", image_url);
+        var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+
+        if (msg.status_code != 200) {
+          throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
+        }
+
+        var data = response.get_data();
+        var stream = new MemoryInputStream.from_data(data);
+        pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
       }
-
-      var data = response.get_data();
-      var stream = new MemoryInputStream.from_data(data);
-      var pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
 
       cache_mutex.lock();
 
