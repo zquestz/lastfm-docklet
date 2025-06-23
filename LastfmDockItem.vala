@@ -273,7 +273,6 @@ namespace Lastfm {
         return;
       }
 
-      controller.window.update_icon_regions();
       controller.window.update_hovered(0, 0);
       controller.renderer.animated_draw();
     }
@@ -284,7 +283,6 @@ namespace Lastfm {
         return;
       }
 
-      controller.window.update_icon_regions();
       controller.renderer.animated_draw();
 
       controller.hide_manager.update_hovered();
