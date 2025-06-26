@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: docklet-lastfm\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-31 18:42-1000\n"
+"POT-Creation-Date: 2025-06-26 11:20-1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,97 +18,105 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: LastfmDockItem.vala:369
+#: LastfmDockItem.vala:403
 msgid "No recent tracks found"
 msgstr ""
 
-#: LastfmDockItem.vala:376
+#: LastfmDockItem.vala:410
 msgid "Refresh Now"
 msgstr ""
 
-#: LastfmDockItem.vala:390
+#: LastfmDockItem.vala:424
 #, c-format
 msgid "Recent Tracks for %s (%d)"
 msgstr ""
 
-#: LastfmDockItem.vala:506
+#: LastfmDockItem.vala:540
 msgid "Just now"
 msgstr ""
 
-#: LastfmDockItem.vala:509
+#: LastfmDockItem.vala:543
 #, c-format
 msgid "%ld minute ago"
 msgid_plural "%ld minutes ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: LastfmDockItem.vala:512
+#: LastfmDockItem.vala:546
 #, c-format
 msgid "%ld hour ago"
 msgid_plural "%ld hours ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: LastfmDockItem.vala:515
+#: LastfmDockItem.vala:549
 #, c-format
 msgid "%ld day ago"
 msgid_plural "%ld days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: LastfmDockItem.vala:539
+#: LastfmDockItem.vala:585
 msgid "Last.fm Preferences"
 msgstr ""
 
-#: LastfmDockItem.vala:542
+#: LastfmDockItem.vala:588
 msgid "_Cancel"
 msgstr ""
 
-#: LastfmDockItem.vala:543
+#: LastfmDockItem.vala:589
 msgid "_OK"
 msgstr ""
 
-#: LastfmDockItem.vala:560
+#: LastfmDockItem.vala:606
 msgid "API Key:"
 msgstr ""
 
-#: LastfmDockItem.vala:565
+#: LastfmDockItem.vala:611
 msgid "Enter your Last.fm API key"
 msgstr ""
 
-#: LastfmDockItem.vala:567
+#: LastfmDockItem.vala:613
 msgid "Username:"
 msgstr ""
 
-#: LastfmDockItem.vala:572
+#: LastfmDockItem.vala:618
 msgid "Enter your Last.fm username"
 msgstr ""
 
-#: LastfmDockItem.vala:574
+#: LastfmDockItem.vala:620
 msgid "Max Tracks:"
 msgstr ""
 
-#: LastfmDockItem.vala:580
+#: LastfmDockItem.vala:626
+msgid "Rounded Corners:"
+msgstr ""
+
+#: LastfmDockItem.vala:632
 msgid "Get your API key from: https://www.last.fm/api/account/create"
 msgstr ""
 
-#: LastfmDockItem.vala:614
+#: LastfmDockItem.vala:671
+msgid "View Profile"
+msgstr ""
+
+#: LastfmDockItem.vala:681
 msgid "Preferences"
 msgstr ""
 
-#: LastfmDockItem.vala:623
+#: LastfmDockItem.vala:690
 msgid "About"
 msgstr ""
 
-#: LastfmDockItem.vala:637
+#: LastfmDockItem.vala:704
 msgid "Last.fm Docklet"
 msgstr ""
 
-#: LastfmDockItem.vala:639
+#: LastfmDockItem.vala:706
 msgid "Lists recent tracks scrobbled to Last.fm"
 msgstr ""
 
-#: LastfmDockItem.vala:641
+#: LastfmDockItem.vala:708
 msgid "GitHub Repository"
 msgstr ""
 

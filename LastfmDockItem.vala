@@ -566,6 +566,18 @@ namespace Lastfm {
     }
 
     /**
+     * Opens a Last.fm user profile page
+     */
+    private void open_lastfm_profile_page(string profile) {
+      string url = "https://www.last.fm/user/%s".printf(profile);
+      try {
+        Gtk.show_uri_on_window(null, url, Gdk.CURRENT_TIME);
+      } catch (Error e) {
+        warning("Failed to open URL %s: %s", url, e.message);
+      }
+    }
+
+    /**
      * Creates and shows the preferences dialog
      */
     private void show_preferences_dialog() {
@@ -654,6 +666,17 @@ namespace Lastfm {
 
     public override Gee.ArrayList<Gtk.MenuItem> get_menu_items() {
       var items = new Gee.ArrayList<Gtk.MenuItem> ();
+
+      if (prefs.Username != "") {
+        var profile_item = new Gtk.MenuItem.with_label(_("View Profile"));
+        profile_item.activate.connect(() => {
+          open_lastfm_profile_page(prefs.Username);
+        });
+        items.add(profile_item);
+
+        var separator = new Gtk.SeparatorMenuItem();
+        items.add(separator);
+      }
 
       var preferences_item = new Gtk.MenuItem.with_label(_("Preferences"));
       preferences_item.activate.connect(() => {
