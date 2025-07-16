@@ -376,6 +376,8 @@ namespace Lastfm {
       menu.hide.connect(on_menu_hide);
       menu.attach_to_widget(controller.window, null);
 
+      menu.reserve_toggle_size = false;
+
       var header_item = create_header_menu_item();
       menu.append(header_item);
 
@@ -425,6 +427,10 @@ namespace Lastfm {
 
       var header_item = new Gtk.MenuItem.with_label(header_text);
       header_item.set_sensitive(false);
+
+      header_item.set_margin_start(8);
+      header_item.set_margin_end(8);
+      header_item.set_margin_top(4);
 
       var label = header_item.get_child() as Gtk.Label;
       if (label != null) {
