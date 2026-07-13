@@ -312,7 +312,7 @@ namespace Lastfm {
     /**
      * Gets the best available image URL for a track
      */
-    private string get_best_image_url(Track track) {
+    public string get_best_image_url(Track track) {
       if (track.image_extralarge.length > 0) {
         return track.image_extralarge;
       } else if (track.image_large.length > 0) {

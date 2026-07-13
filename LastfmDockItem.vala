@@ -21,10 +21,13 @@ namespace Lastfm {
     private LastfmClient lastfm_client;
     private Gee.ArrayList<Track> recent_tracks;
     private GLib.Mutex tracks_mutex;
+    private string last_fingerprint = "";
+    private string last_icon_key = "";
 
     private Gtk.Menu? cached_menu = null;
     private bool menu_needs_rebuild = true;
     private uint menu_rebuild_idle_id = 0;
+    private int64 menu_built_at = 0;
     private GLib.Mutex menu_mutex;
 
     public LastfmDockItem.with_dockitem_file(GLib.File file) {
@@ -205,15 +208,49 @@ namespace Lastfm {
           return;
         }
 
+        var fingerprint = compute_tracks_fingerprint(tracks);
+
         tracks_mutex.lock();
         recent_tracks = tracks;
         tracks_mutex.unlock();
+
+        if (fingerprint == last_fingerprint) {
+          return;
+        }
+        last_fingerprint = fingerprint;
 
         yield update_docklet_icon();
         yield rebuild_menu_cache();
       } catch (Error e) {
         warning("Failed to fetch tracks: %s", e.message);
       }
+    }
+
+    /**
+     * Builds a fingerprint of the fetched tracks and the prefs that affect
+     * their rendering, used to skip icon and menu updates when nothing
+     * changed
+     */
+    private string compute_tracks_fingerprint(Gee.ArrayList<Track> tracks) {
+      var builder = new StringBuilder();
+      builder.append(prefs.RoundedCorners.to_string());
+
+      foreach (var track in tracks) {
+        builder.append("|");
+        builder.append(track.to_string());
+        builder.append(":");
+        builder.append(track.track_url);
+        builder.append(":");
+        builder.append(track.album_name);
+        builder.append(":");
+        builder.append(track.timestamp.to_string());
+        builder.append(":");
+        builder.append(track.is_loved.to_string());
+        builder.append(":");
+        builder.append(lastfm_client.get_best_image_url(track));
+      }
+
+      return builder.str;
     }
 
     /**
@@ -228,7 +265,15 @@ namespace Lastfm {
         return;
       }
 
-      Text = most_recent_track.to_string();
+      var text = most_recent_track.to_string();
+      if (Text != text) {
+        Text = text;
+      }
+
+      var icon_key = lastfm_client.get_best_image_url(most_recent_track) + ":" + prefs.RoundedCorners.to_string();
+      if (icon_key == last_icon_key) {
+        return;
+      }
 
       try {
         var pixbuf = yield lastfm_client.get_album_art(most_recent_track, ALBUM_ICON_SIZE);
@@ -242,9 +287,15 @@ namespace Lastfm {
         } else {
           reset_to_default_icon();
         }
+        last_icon_key = icon_key;
       } catch (Error e) {
         warning("Failed to load album art: %s", e.message);
         reset_to_default_icon();
+
+        // Transient failure: clear the change tracking so the next fetch
+        // retries instead of skipping as unchanged
+        last_icon_key = "";
+        last_fingerprint = "";
       }
     }
 
@@ -314,6 +365,7 @@ namespace Lastfm {
 
       cached_menu = build_tracks_menu(controller);
       menu_needs_rebuild = false;
+      menu_built_at = GLib.get_monotonic_time();
 
       menu_mutex.unlock();
     }
@@ -395,12 +447,17 @@ namespace Lastfm {
 
       menu_mutex.lock();
 
-      if (cached_menu == null || menu_needs_rebuild) {
+      // The relative time labels go stale; rebuild when the menu is older
+      // than the fetch interval
+      var menu_expired = (GLib.get_monotonic_time() - menu_built_at) > FETCH_INTERVAL_SECONDS * TimeSpan.SECOND;
+
+      if (cached_menu == null || menu_needs_rebuild || menu_expired) {
         if (cached_menu != null) {
           cached_menu.destroy();
         }
         cached_menu = build_tracks_menu(controller);
         menu_needs_rebuild = false;
+        menu_built_at = GLib.get_monotonic_time();
       }
 
       var menu_to_show = cached_menu;
