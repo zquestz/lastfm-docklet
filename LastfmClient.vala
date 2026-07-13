@@ -32,7 +32,9 @@ namespace Lastfm {
   }
 
   /**
-   * Client for fetching data from Last.fm API
+   * Client for fetching data from Last.fm API.
+   *
+   * Runs entirely on the GLib main loop; not thread-safe.
    */
   public class LastfmClient : GLib.Object {
     private const string API_BASE = "https://ws.audioscrobbler.com/2.0/";
@@ -45,7 +47,6 @@ namespace Lastfm {
 
     private int max_cache_size = 30;
     private Gee.HashMap<string, Gdk.Pixbuf> image_cache;
-    private GLib.Mutex cache_mutex;
 
     public LastfmClient() {
       session = new Soup.Session();
@@ -66,14 +67,11 @@ namespace Lastfm {
      * Updates cache size based on user preferences
      */
     public void update_cache_size(int max_entries) {
-      cache_mutex.lock();
       max_cache_size = max_entries * CACHE_SIZE_MULTIPLIER;
 
       if (image_cache.size > max_cache_size) {
         image_cache.clear();
       }
-
-      cache_mutex.unlock();
     }
 
     /**
@@ -282,17 +280,8 @@ namespace Lastfm {
 
       var cache_key = @"$image_url:$size";
 
-      cache_mutex.lock();
-
-      Gdk.Pixbuf? result = null;
       if (image_cache.has_key(cache_key)) {
-        result = image_cache[cache_key];
-      }
-
-      cache_mutex.unlock();
-
-      if (result != null) {
-        return result;
+        return image_cache[cache_key];
       }
 
       Gdk.Pixbuf pixbuf;
@@ -316,14 +305,11 @@ namespace Lastfm {
         pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
       }
 
-      cache_mutex.lock();
-
       if (image_cache.size >= max_cache_size) {
         image_cache.clear();
       }
 
       image_cache[cache_key] = pixbuf;
-      cache_mutex.unlock();
 
       return pixbuf;
     }

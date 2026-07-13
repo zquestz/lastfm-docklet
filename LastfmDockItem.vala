@@ -22,7 +22,6 @@ namespace Lastfm {
 
     private LastfmClient lastfm_client;
     private Gee.ArrayList<Track> recent_tracks;
-    private GLib.Mutex tracks_mutex;
     private string last_fingerprint = "";
     private string last_icon_key = "";
 
@@ -30,7 +29,6 @@ namespace Lastfm {
     private bool menu_needs_rebuild = true;
     private uint menu_rebuild_idle_id = 0;
     private int64 menu_built_at = 0;
-    private GLib.Mutex menu_mutex;
 
     public LastfmDockItem.with_dockitem_file(GLib.File file) {
       GLib.Object(Prefs : new LastfmPreferences.with_file(file));
@@ -232,9 +230,7 @@ namespace Lastfm {
 
         var fingerprint = compute_tracks_fingerprint(tracks);
 
-        tracks_mutex.lock();
         recent_tracks = tracks;
-        tracks_mutex.unlock();
 
         if (fingerprint == last_fingerprint) {
           return;
@@ -281,9 +277,7 @@ namespace Lastfm {
      * Updates the docklet icon with the most recent track's album art
      */
     private async void update_docklet_icon() {
-      tracks_mutex.lock();
       Track? most_recent_track = recent_tracks.size > 0 ? recent_tracks[0] : null;
-      tracks_mutex.unlock();
 
       if (most_recent_track == null) {
         return;
@@ -376,13 +370,10 @@ namespace Lastfm {
         return;
       }
 
-      menu_mutex.lock();
-
       // Destroying a popped-up menu would close it under the user's
       // cursor; defer the rebuild until it hides
       if (cached_menu != null && cached_menu.visible) {
         menu_needs_rebuild = true;
-        menu_mutex.unlock();
         return;
       }
 
@@ -394,31 +385,24 @@ namespace Lastfm {
       cached_menu = build_tracks_menu(controller);
       menu_needs_rebuild = false;
       menu_built_at = GLib.get_monotonic_time();
-
-      menu_mutex.unlock();
     }
 
     /**
-     * Thread-safe method to get a copy of the current tracks
+     * Gets a copy of the current tracks
      */
     private Gee.ArrayList<Track> get_tracks_copy() {
-      tracks_mutex.lock();
       var tracks_copy = new Gee.ArrayList<Track> ();
       foreach (var track in recent_tracks) {
         tracks_copy.add(track);
       }
-      tracks_mutex.unlock();
       return tracks_copy;
     }
 
     /**
-     * Thread-safe method to get track count
+     * Gets the current track count
      */
     private int get_track_count() {
-      tracks_mutex.lock();
-      var count = recent_tracks.size;
-      tracks_mutex.unlock();
-      return count;
+      return recent_tracks.size;
     }
 
     protected override AnimationType on_clicked(PopupButton button, Gdk.ModifierType mod, uint32 event_time) {
@@ -473,8 +457,6 @@ namespace Lastfm {
         return;
       }
 
-      menu_mutex.lock();
-
       // The relative time labels go stale; rebuild when the menu is older
       // than the fetch interval
       var menu_expired = (GLib.get_monotonic_time() - menu_built_at) > FETCH_INTERVAL_SECONDS * TimeSpan.SECOND;
@@ -489,8 +471,6 @@ namespace Lastfm {
       }
 
       var menu_to_show = cached_menu;
-
-      menu_mutex.unlock();
 
       if (menu_to_show != null) {
         Helpers.popup_docklet_menu(controller, this, menu_to_show);
