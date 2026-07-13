@@ -131,16 +131,20 @@ namespace Lastfm {
       var root_obj = root.get_object();
 
       if (root_obj.has_member("error")) {
-        var error_code = (int) root_obj.get_int_member("error");
-        var error_message = root_obj.get_string_member("message");
+        var error_node = root_obj.get_member("error");
+        var error_code = 0;
+        if (error_node.get_node_type() == Json.NodeType.VALUE) {
+          error_code = (int) error_node.get_int();
+        }
+        var error_message = get_json_string_member(root_obj, "message");
         throw new IOError.FAILED("Last.fm API error %d: %s", error_code, error_message);
       }
 
-      if (!root_obj.has_member("recenttracks")) {
+      var recenttracks = get_json_object_member(root_obj, "recenttracks");
+      if (recenttracks == null) {
         throw new IOError.INVALID_DATA("No recenttracks in response");
       }
 
-      var recenttracks = root_obj.get_object_member("recenttracks");
       if (!recenttracks.has_member("track")) {
         return new Gee.ArrayList<Track> ();
       }
@@ -180,34 +184,29 @@ namespace Lastfm {
     private Track parse_track(Json.Object track_obj) throws Error {
       var track = new Track();
 
-      if (track_obj.has_member("artist")) {
-        var artist_node = track_obj.get_member("artist");
-
-        if (artist_node.get_node_type() == Json.NodeType.OBJECT) {
-          var artist = track_obj.get_object_member("artist");
-
-          if (artist.has_member("name")) {
-            track.artist_name = get_json_string_member(artist, "name");
-          } else {
-            track.artist_name = get_json_string_member(artist, "#text");
-          }
-
-          track.artist_mbid = get_json_string_member(artist, "mbid");
+      var artist = get_json_object_member(track_obj, "artist");
+      if (artist != null) {
+        if (artist.has_member("name")) {
+          track.artist_name = get_json_string_member(artist, "name");
+        } else {
+          track.artist_name = get_json_string_member(artist, "#text");
         }
+
+        track.artist_mbid = get_json_string_member(artist, "mbid");
       }
 
       track.track_name = get_json_string_member(track_obj, "name");
       track.track_mbid = get_json_string_member(track_obj, "mbid");
       track.track_url = get_json_string_member(track_obj, "url");
 
-      if (track_obj.has_member("album")) {
-        var album = track_obj.get_object_member("album");
+      var album = get_json_object_member(track_obj, "album");
+      if (album != null) {
         track.album_name = get_json_string_member(album, "#text");
         track.album_mbid = get_json_string_member(album, "mbid");
       }
 
-      if (track_obj.has_member("image")) {
-        var images = track_obj.get_array_member("image");
+      var images = get_json_array_member(track_obj, "image");
+      if (images != null) {
         images.foreach_element((array, index, element) => {
           if (element.get_node_type() == Json.NodeType.OBJECT) {
             var img_obj = element.get_object();
@@ -232,16 +231,14 @@ namespace Lastfm {
         });
       }
 
-      if (track_obj.has_member("date")) {
-        var date_obj = track_obj.get_object_member("date");
-        if (date_obj.has_member("uts")) {
-          track.timestamp = int.parse(date_obj.get_string_member("uts"));
-        }
+      var date_obj = get_json_object_member(track_obj, "date");
+      if (date_obj != null) {
+        track.timestamp = int64.parse(get_json_string_member(date_obj, "uts"));
         track.date_text = get_json_string_member(date_obj, "#text");
       }
 
-      if (track_obj.has_member("@attr")) {
-        var attr_obj = track_obj.get_object_member("@attr");
+      var attr_obj = get_json_object_member(track_obj, "@attr");
+      if (attr_obj != null) {
         track.is_now_playing = attr_obj.has_member("nowplaying");
       }
 
@@ -258,14 +255,41 @@ namespace Lastfm {
     private string get_json_string_member(Json.Object obj, string member_name) {
       if (obj.has_member(member_name)) {
         var node = obj.get_member(member_name);
-        if (node.get_node_type() == Json.NodeType.NULL) {
-          return "";
-        }
         if (node.get_node_type() == Json.NodeType.VALUE) {
-          return obj.get_string_member(member_name);
+          // Null for values of other types, e.g. numbers
+          var value = node.get_string();
+          if (value != null) {
+            return value;
+          }
         }
       }
       return "";
+    }
+
+    /**
+     * Helper method to safely get object members from JSON objects
+     */
+    private Json.Object? get_json_object_member(Json.Object obj, string member_name) {
+      if (obj.has_member(member_name)) {
+        var node = obj.get_member(member_name);
+        if (node.get_node_type() == Json.NodeType.OBJECT) {
+          return node.get_object();
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Helper method to safely get array members from JSON objects
+     */
+    private Json.Array? get_json_array_member(Json.Object obj, string member_name) {
+      if (obj.has_member(member_name)) {
+        var node = obj.get_member(member_name);
+        if (node.get_node_type() == Json.NodeType.ARRAY) {
+          return node.get_array();
+        }
+      }
+      return null;
     }
 
     /**
