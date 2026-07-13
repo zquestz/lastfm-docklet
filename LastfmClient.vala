@@ -300,9 +300,10 @@ namespace Lastfm {
           throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
         }
 
-        var data = response.get_data();
-        var stream = new MemoryInputStream.from_data(data);
-        pixbuf = new Gdk.Pixbuf.from_stream_at_scale(stream, size, size, true);
+        var stream = new MemoryInputStream.from_bytes(response);
+
+        // Decode on GIO's worker pool to keep the main loop free
+        pixbuf = yield new Gdk.Pixbuf.from_stream_at_scale_async(stream, size, size, true, cancellable);
       }
 
       if (image_cache.size >= max_cache_size) {
