@@ -14,7 +14,7 @@ namespace Lastfm {
     private uint fetch_timer_id = 0;
     private uint debounce_timer_id = 0;
     private uint initial_timer_id = 0;
-    private bool initial_fetch_done = false;
+    private bool recurring_timer_started = false;
     private bool fetch_in_progress = false;
     private bool fetch_pending = false;
     private bool removed = false;
@@ -164,7 +164,7 @@ namespace Lastfm {
     }
 
     /**
-     * Triggers a fetch and sets up the recurring timer
+     * Triggers a fetch and, once configured, starts the recurring timer
      */
     private void trigger_fetch() {
       if (removed) {
@@ -173,10 +173,16 @@ namespace Lastfm {
 
       fetch.begin();
 
-      if (!initial_fetch_done) {
-        initial_fetch_done = true;
+      // Don't poll an unconfigured docklet; the timer starts with the
+      // fetch triggered by the preferences change
+      if (!recurring_timer_started && is_configured()) {
+        recurring_timer_started = true;
         setup_recurring_timer();
       }
+    }
+
+    private bool is_configured() {
+      return prefs.APIKey.length > 0 && prefs.Username.length > 0;
     }
 
     /**
@@ -205,7 +211,7 @@ namespace Lastfm {
         return;
       }
 
-      if (prefs.APIKey.length == 0 || prefs.Username.length == 0) {
+      if (!is_configured()) {
         message("Skipping fetch - missing API key or username");
         return;
       }
