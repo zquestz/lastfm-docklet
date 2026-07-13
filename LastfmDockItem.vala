@@ -24,6 +24,7 @@ namespace Lastfm {
 
     private Gtk.Menu? cached_menu = null;
     private bool menu_needs_rebuild = true;
+    private uint menu_rebuild_idle_id = 0;
     private GLib.Mutex menu_mutex;
 
     public LastfmDockItem.with_dockitem_file(GLib.File file) {
@@ -107,6 +108,10 @@ namespace Lastfm {
       if (debounce_timer_id != 0) {
         GLib.Source.remove(debounce_timer_id);
         debounce_timer_id = 0;
+      }
+      if (menu_rebuild_idle_id != 0) {
+        GLib.Source.remove(menu_rebuild_idle_id);
+        menu_rebuild_idle_id = 0;
       }
     }
 
@@ -294,6 +299,14 @@ namespace Lastfm {
 
       menu_mutex.lock();
 
+      // Destroying a popped-up menu would close it under the user's
+      // cursor; defer the rebuild until it hides
+      if (cached_menu != null && cached_menu.visible) {
+        menu_needs_rebuild = true;
+        menu_mutex.unlock();
+        return;
+      }
+
       if (cached_menu != null) {
         cached_menu.destroy();
         cached_menu = null;
@@ -358,6 +371,17 @@ namespace Lastfm {
       if (!controller.hide_manager.Hovered) {
         controller.window.update_hovered(0, 0);
       }
+
+      // GTK emits hide before the clicked item's activate; rebuilding here
+      // would destroy the menu items and drop the pending activation, so
+      // defer it to an idle
+      if (menu_needs_rebuild && menu_rebuild_idle_id == 0) {
+        menu_rebuild_idle_id = GLib.Idle.add(() => {
+          menu_rebuild_idle_id = 0;
+          rebuild_menu_cache.begin();
+          return false;
+        });
+      }
     }
 
     /**
@@ -371,7 +395,10 @@ namespace Lastfm {
 
       menu_mutex.lock();
 
-      if (cached_menu == null) {
+      if (cached_menu == null || menu_needs_rebuild) {
+        if (cached_menu != null) {
+          cached_menu.destroy();
+        }
         cached_menu = build_tracks_menu(controller);
         menu_needs_rebuild = false;
       }
