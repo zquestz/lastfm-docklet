@@ -838,7 +838,7 @@ namespace Lastfm {
     private void show_about_dialog() {
       var about_dialog = new Gtk.AboutDialog();
       about_dialog.set_program_name(_("Last.fm Docklet"));
-      about_dialog.set_version("0.1.1");
+      about_dialog.set_version(Config.VERSION);
       about_dialog.set_comments(_("Lists recent tracks scrobbled to Last.fm"));
       about_dialog.set_website("https://github.com/zquestz/lastfm-docklet");
       about_dialog.set_website_label(_("GitHub Repository"));

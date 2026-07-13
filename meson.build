@@ -29,6 +29,7 @@ add_project_arguments(
     '-Wl,--enable-new-dtags',
 
     '-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()),
+    '-DVERSION="@0@"'.format(meson.project_version()),
   ],
   language: 'c',
 )
@@ -39,6 +40,7 @@ sources = [
   'LastfmDockItem.vala',
   'LastfmPreferences.vala',
   'LastfmClient.vala',
+  'config.vapi',
   resources,
 ]
 
