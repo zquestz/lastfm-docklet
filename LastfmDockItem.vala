@@ -798,11 +798,6 @@ namespace Lastfm {
           prefs.Username = username_entry.get_text().strip();
           prefs.MaxEntries = (int) max_entries_spin.get_value();
           prefs.RoundedCorners = rounded_corners_switch.get_active();
-
-          prefs.notify_property("APIKey");
-          prefs.notify_property("Username");
-          prefs.notify_property("MaxEntries");
-          prefs.notify_property("RoundedCorners");
         }
         dialog.destroy();
       });
