@@ -106,10 +106,7 @@ namespace Lastfm {
         GLib.Source.remove(initial_timer_id);
         initial_timer_id = 0;
       }
-      if (fetch_timer_id != 0) {
-        GLib.Source.remove(fetch_timer_id);
-        fetch_timer_id = 0;
-      }
+      stop_recurring_timer();
       if (debounce_timer_id != 0) {
         GLib.Source.remove(debounce_timer_id);
         debounce_timer_id = 0;
@@ -164,7 +161,8 @@ namespace Lastfm {
     }
 
     /**
-     * Triggers a fetch and, once configured, starts the recurring timer
+     * Triggers a fetch and keeps the recurring timer in sync with the
+     * configured state
      */
     private void trigger_fetch() {
       if (removed) {
@@ -173,11 +171,16 @@ namespace Lastfm {
 
       fetch.begin();
 
-      // Don't poll an unconfigured docklet; the timer starts with the
-      // fetch triggered by the preferences change
-      if (!recurring_timer_started && is_configured()) {
-        recurring_timer_started = true;
-        setup_recurring_timer();
+      // Only poll while configured; clearing the credentials stops the
+      // timer until a preferences change restores them
+      if (is_configured()) {
+        if (!recurring_timer_started) {
+          recurring_timer_started = true;
+          setup_recurring_timer();
+        }
+      } else if (recurring_timer_started) {
+        recurring_timer_started = false;
+        stop_recurring_timer();
       }
     }
 
@@ -189,14 +192,22 @@ namespace Lastfm {
      * Sets up the recurring fetch timer
      */
     private void setup_recurring_timer() {
-      if (fetch_timer_id != 0) {
-        GLib.Source.remove(fetch_timer_id);
-      }
+      stop_recurring_timer();
 
       fetch_timer_id = GLib.Timeout.add_seconds(FETCH_INTERVAL_SECONDS, () => {
         fetch.begin();
         return true;
       });
+    }
+
+    /**
+     * Stops the recurring fetch timer
+     */
+    private void stop_recurring_timer() {
+      if (fetch_timer_id != 0) {
+        GLib.Source.remove(fetch_timer_id);
+        fetch_timer_id = 0;
+      }
     }
 
     private async void fetch() {
