@@ -13,7 +13,10 @@ namespace Lastfm {
 
     private uint fetch_timer_id = 0;
     private uint debounce_timer_id = 0;
+    private uint initial_timer_id = 0;
     private bool initial_fetch_done = false;
+    private bool removed = false;
+    private ulong prefs_handler_id = 0;
 
     private LastfmClient lastfm_client;
     private Gee.ArrayList<Track> recent_tracks;
@@ -28,6 +31,8 @@ namespace Lastfm {
     }
 
     construct {
+      notify["Container"].connect(handle_container_changed);
+
       prefs = (LastfmPreferences) Prefs;
       Icon = "resource://" + Lastfm.G_RESOURCE_PATH + "/icons/lastfm.png";
 
@@ -44,13 +49,57 @@ namespace Lastfm {
 
       setup_preference_monitoring();
 
-      GLib.Timeout.add(500, () => {
+      initial_timer_id = GLib.Timeout.add(500, () => {
+        initial_timer_id = 0;
         trigger_fetch();
         return false;
       });
     }
 
     ~LastfmDockItem() {
+      remove_timers();
+
+      if (cached_menu != null) {
+        cached_menu.destroy();
+      }
+    }
+
+    private void handle_container_changed() {
+      if (Container == null) {
+        removed_from_dock();
+      }
+    }
+
+    /**
+     * Tears down timers, signal handlers and cached state when the item
+     * leaves its dock. Cleanup must not rely solely on the destructor:
+     * the timer closures and preference handler keep this item alive and
+     * unreachable for finalization.
+     */
+    private void removed_from_dock() {
+      removed = true;
+
+      remove_timers();
+
+      if (prefs_handler_id > 0) {
+        prefs.disconnect(prefs_handler_id);
+        prefs_handler_id = 0;
+      }
+
+      if (cached_menu != null) {
+        cached_menu.destroy();
+        cached_menu = null;
+      }
+    }
+
+    /**
+     * Removes all active timers
+     */
+    private void remove_timers() {
+      if (initial_timer_id != 0) {
+        GLib.Source.remove(initial_timer_id);
+        initial_timer_id = 0;
+      }
       if (fetch_timer_id != 0) {
         GLib.Source.remove(fetch_timer_id);
         fetch_timer_id = 0;
@@ -59,36 +108,40 @@ namespace Lastfm {
         GLib.Source.remove(debounce_timer_id);
         debounce_timer_id = 0;
       }
-      if (cached_menu != null) {
-        cached_menu.destroy();
-      }
     }
 
     /**
      * Sets up monitoring for preference changes
      */
     private void setup_preference_monitoring() {
-      prefs.notify.connect((pspec) => {
-        switch (pspec.name) {
-          case "APIKey":
-          case "Username":
-            schedule_debounced_fetch();
-            break;
-          case "MaxEntries":
-            lastfm_client.update_cache_size(prefs.MaxEntries);
-            schedule_debounced_fetch();
-            break;
-          case "RoundedCorners":
-            schedule_debounced_fetch();
-            break;
-        }
-      });
+      prefs_handler_id = prefs.notify.connect(handle_prefs_changed);
+    }
+
+    [CCode (instance_pos = -1)]
+    private void handle_prefs_changed(GLib.Object o, ParamSpec pspec) {
+      switch (pspec.name) {
+        case "APIKey":
+        case "Username":
+          schedule_debounced_fetch();
+          break;
+        case "MaxEntries":
+          lastfm_client.update_cache_size(prefs.MaxEntries);
+          schedule_debounced_fetch();
+          break;
+        case "RoundedCorners":
+          schedule_debounced_fetch();
+          break;
+      }
     }
 
     /**
      * Schedules a debounced fetch to handle multiple rapid preference changes
      */
     private void schedule_debounced_fetch() {
+      if (removed) {
+        return;
+      }
+
       if (debounce_timer_id != 0) {
         GLib.Source.remove(debounce_timer_id);
       }
@@ -104,6 +157,10 @@ namespace Lastfm {
      * Triggers a fetch and sets up the recurring timer
      */
     private void trigger_fetch() {
+      if (removed) {
+        return;
+      }
+
       fetch.begin();
 
       if (!initial_fetch_done) {
@@ -127,6 +184,10 @@ namespace Lastfm {
     }
 
     private async void fetch() {
+      if (removed) {
+        return;
+      }
+
       if (prefs.APIKey.length == 0 || prefs.Username.length == 0) {
         message("Skipping fetch - missing API key or username");
         return;
@@ -134,6 +195,10 @@ namespace Lastfm {
 
       try {
         var tracks = yield lastfm_client.get_recent_tracks(prefs.APIKey, prefs.Username, prefs.MaxEntries);
+
+        if (removed) {
+          return;
+        }
 
         tracks_mutex.lock();
         recent_tracks = tracks;
@@ -162,6 +227,10 @@ namespace Lastfm {
 
       try {
         var pixbuf = yield lastfm_client.get_album_art(most_recent_track, ALBUM_ICON_SIZE);
+
+        if (removed) {
+          return;
+        }
 
         if (pixbuf != null) {
           ForcePixbuf = prefs.RoundedCorners ? round_pixbuf_corners(pixbuf) : pixbuf;
