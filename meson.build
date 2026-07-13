@@ -2,12 +2,13 @@ project(
   'docklet-lastfm',
   'vala',
   'c',
-  version: '0.1.0',
+  version: '0.1.1',
 )
 
 # Dependencies
 gtk_dep = dependency('gtk+-3.0')
-plank_dep = dependency('plank')
+# Helpers.popup_docklet_menu requires plank-reloaded 0.11.170
+plank_dep = dependency('plank', version: '>= 0.11.170')
 soup_dep = dependency('libsoup-3.0')
 json_dep = dependency('json-glib-1.0')
 i18n = import('i18n')

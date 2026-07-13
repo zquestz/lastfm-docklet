@@ -493,52 +493,7 @@ namespace Lastfm {
       menu_mutex.unlock();
 
       if (menu_to_show != null) {
-        menu_to_show.show_all();
-
-        Gtk.Requisition requisition;
-        menu_to_show.get_preferred_size(null, out requisition);
-
-        int x, y;
-        controller.position_manager.get_menu_position(this, requisition, out x, out y);
-
-        Gdk.Gravity gravity;
-        Gdk.Gravity flipped_gravity;
-
-        switch (controller.position_manager.Position) {
-        case Gtk.PositionType.BOTTOM :
-          gravity = Gdk.Gravity.NORTH;
-          flipped_gravity = Gdk.Gravity.SOUTH;
-          break;
-        case Gtk.PositionType.TOP :
-          gravity = Gdk.Gravity.SOUTH;
-          flipped_gravity = Gdk.Gravity.NORTH;
-          break;
-        case Gtk.PositionType.LEFT :
-          gravity = Gdk.Gravity.EAST;
-          flipped_gravity = Gdk.Gravity.WEST;
-          break;
-        case Gtk.PositionType.RIGHT :
-          gravity = Gdk.Gravity.WEST;
-          flipped_gravity = Gdk.Gravity.EAST;
-          break;
-          default :
-          gravity = Gdk.Gravity.NORTH;
-          flipped_gravity = Gdk.Gravity.SOUTH;
-          break;
-        }
-
-        menu_to_show.popup_at_rect(
-                                   controller.window.get_screen().get_root_window(),
-                                   Gdk.Rectangle() {
-          x = x,
-          y = y,
-          width = 1,
-          height = 1,
-        },
-                                   gravity,
-                                   flipped_gravity,
-                                   null
-        );
+        Helpers.popup_docklet_menu(controller, this, menu_to_show);
       }
     }
 
@@ -891,7 +846,7 @@ namespace Lastfm {
     private void show_about_dialog() {
       var about_dialog = new Gtk.AboutDialog();
       about_dialog.set_program_name(_("Last.fm Docklet"));
-      about_dialog.set_version("0.1.0");
+      about_dialog.set_version("0.1.1");
       about_dialog.set_comments(_("Lists recent tracks scrobbled to Last.fm"));
       about_dialog.set_website("https://github.com/zquestz/lastfm-docklet");
       about_dialog.set_website_label(_("GitHub Repository"));

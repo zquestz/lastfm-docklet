@@ -14,7 +14,7 @@ A Last.fm docklet for [Plank Reloaded](https://github.com/zquestz/plank-reloaded
 - gtk+-3.0
 - libsoup-3.0'
 - json-glib-1.0'
-- plank-reloaded
+- plank-reloaded (>= 0.11.170)
 
 ## Installation
 
