@@ -15,6 +15,8 @@ namespace Lastfm {
     private uint debounce_timer_id = 0;
     private uint initial_timer_id = 0;
     private bool initial_fetch_done = false;
+    private bool fetch_in_progress = false;
+    private bool fetch_pending = false;
     private bool removed = false;
     private ulong prefs_handler_id = 0;
 
@@ -84,6 +86,8 @@ namespace Lastfm {
       removed = true;
 
       remove_timers();
+
+      lastfm_client.cancel_all();
 
       if (prefs_handler_id > 0) {
         prefs.disconnect(prefs_handler_id);
@@ -196,11 +200,29 @@ namespace Lastfm {
         return;
       }
 
+      // Coalesce overlapping requests: a slow fetch would otherwise race a
+      // timer- or preference-triggered one over the shared state
+      if (fetch_in_progress) {
+        fetch_pending = true;
+        return;
+      }
+
       if (prefs.APIKey.length == 0 || prefs.Username.length == 0) {
         message("Skipping fetch - missing API key or username");
         return;
       }
 
+      fetch_in_progress = true;
+      yield do_fetch();
+      fetch_in_progress = false;
+
+      if (fetch_pending && !removed) {
+        fetch_pending = false;
+        fetch.begin();
+      }
+    }
+
+    private async void do_fetch() {
       try {
         var tracks = yield lastfm_client.get_recent_tracks(prefs.APIKey, prefs.Username, prefs.MaxEntries);
 
@@ -222,7 +244,9 @@ namespace Lastfm {
         yield update_docklet_icon();
         yield rebuild_menu_cache();
       } catch (Error e) {
-        warning("Failed to fetch tracks: %s", e.message);
+        if (!removed) {
+          warning("Failed to fetch tracks: %s", e.message);
+        }
       }
     }
 
@@ -289,6 +313,10 @@ namespace Lastfm {
         }
         last_icon_key = icon_key;
       } catch (Error e) {
+        if (removed) {
+          return;
+        }
+
         warning("Failed to load album art: %s", e.message);
         reset_to_default_icon();
 
@@ -677,7 +705,9 @@ namespace Lastfm {
           return;
         }
       } catch (Error e) {
-        warning("Failed to load album art: %s", e.message);
+        if (!(e is IOError.CANCELLED)) {
+          warning("Failed to load album art: %s", e.message);
+        }
       }
 
       image_widget.set_from_icon_name("audio-x-generic", Gtk.IconSize.LARGE_TOOLBAR);

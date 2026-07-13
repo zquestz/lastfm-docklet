@@ -35,11 +35,13 @@ namespace Lastfm {
    * Client for fetching data from Last.fm API
    */
   public class LastfmClient : GLib.Object {
-    private const string API_BASE = "http://ws.audioscrobbler.com/2.0/";
+    private const string API_BASE = "https://ws.audioscrobbler.com/2.0/";
     private const int CACHE_SIZE_MULTIPLIER = 3;
     private const string NOT_FOUND_IMAGE = "2a96cbd8b46e442fc41c2b86b821562f.png";
+    private const uint REQUEST_TIMEOUT_SECONDS = 30;
 
     private Soup.Session session;
+    private GLib.Cancellable cancellable;
 
     private int max_cache_size = 30;
     private Gee.HashMap<string, Gdk.Pixbuf> image_cache;
@@ -47,7 +49,17 @@ namespace Lastfm {
 
     public LastfmClient() {
       session = new Soup.Session();
+      session.timeout = REQUEST_TIMEOUT_SECONDS;
+      cancellable = new GLib.Cancellable();
       image_cache = new Gee.HashMap<string, Gdk.Pixbuf> ();
+    }
+
+    /**
+     * Cancels all in-flight requests. One-way: the client rejects any
+     * further requests afterwards, so only call this on teardown.
+     */
+    public void cancel_all() {
+      cancellable.cancel();
     }
 
     /**
@@ -74,8 +86,11 @@ namespace Lastfm {
 
       var url = build_recent_tracks_url(api_key, username, limit);
       var msg = new Soup.Message("GET", url);
+      if (msg == null) {
+        throw new IOError.INVALID_ARGUMENT("Invalid URL: %s", url);
+      }
 
-      var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+      var response = yield session.send_and_read_async(msg, Priority.DEFAULT, cancellable);
 
       if (msg.status_code != 200) {
         throw new IOError.FAILED("API request failed with status %u: %s",
@@ -286,7 +301,11 @@ namespace Lastfm {
         pixbuf = new Gdk.Pixbuf.from_resource_at_scale(Lastfm.G_RESOURCE_PATH + "/icons/missing.png", size, size, true);
       } else {
         var msg = new Soup.Message("GET", image_url);
-        var response = yield session.send_and_read_async(msg, Priority.DEFAULT, null);
+        if (msg == null) {
+          throw new IOError.INVALID_ARGUMENT("Invalid image URL: %s", image_url);
+        }
+
+        var response = yield session.send_and_read_async(msg, Priority.DEFAULT, cancellable);
 
         if (msg.status_code != 200) {
           throw new IOError.FAILED("Failed to download image: HTTP %u", msg.status_code);
